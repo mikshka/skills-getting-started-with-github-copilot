@@ -8,6 +8,7 @@ for extracurricular activities at Mergington High School.
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
+from fastapi import Query
 import os
 from pathlib import Path
 
@@ -118,3 +119,33 @@ def signup_for_activity(activity_name: str, email: str):
     # Add normalized student email
     activity.setdefault("participants", []).append(normalized_email)
     return {"message": f"Signed up {normalized_email} for {activity_name}"}
+
+
+@app.delete("/activities/{activity_name}/unregister")
+def unregister_participant(activity_name: str, email: str = Query(...)):
+    """Unregister a student from an activity by email (normalize email)
+
+    Returns a simple message on success or raises an HTTPException if the
+    activity or participant is not found.
+    """
+    # Validate activity exists
+    if activity_name not in activities:
+        raise HTTPException(status_code=404, detail="Activity not found")
+
+    # Normalize email
+    normalized_email = email.strip().lower()
+
+    activity = activities[activity_name]
+    participants = activity.get("participants", [])
+
+    # Build normalized map to find original email entries (if casing differs)
+    normalized_map = {p.strip().lower(): p for p in participants}
+
+    if normalized_email not in normalized_map:
+        raise HTTPException(status_code=404, detail="Participant not found in activity")
+
+    # Remove the original entry
+    original = normalized_map[normalized_email]
+    participants.remove(original)
+
+    return {"message": f"Unregistered {normalized_email} from {activity_name}"}

@@ -9,22 +9,32 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const response = await fetch("/activities");
       const activities = await response.json();
+      console.log("Fetched activities:", activities); // Debug log
 
       // Clear loading message
       activitiesList.innerHTML = "";
 
       // Populate activities list
       Object.entries(activities).forEach(([name, details]) => {
+        console.log("Activity details:", details); // Debug log
         const activityCard = document.createElement("div");
         activityCard.className = "activity-card";
 
         const spotsLeft = details.max_participants - details.participants.length;
+        const participantsList = Array.isArray(details.participants) ? details.participants : [];
 
         activityCard.innerHTML = `
           <h4>${name}</h4>
           <p>${details.description}</p>
           <p><strong>Schedule:</strong> ${details.schedule}</p>
           <p><strong>Availability:</strong> ${spotsLeft} spots left</p>
+          <div class="participants">
+            <p><strong>Current Participants:</strong></p>
+            ${participantsList.length > 0 
+              ? `<ul>${participantsList.map(p => `<li>${p}</li>`).join('')}</ul>`
+              : `<p class="no-participants">No participants yet</p>`
+            }
+          </div>
         `;
 
         activitiesList.appendChild(activityCard);
